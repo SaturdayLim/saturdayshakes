@@ -1,0 +1,30 @@
+# Daily (and on-demand) backup of the live cloud collection into the repo.
+# Reads are public, so no secrets are needed. Produces data/collection.json history.
+name: Backup collection
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 6 * * *"   # 06:17 UTC daily
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch live collection
+        run: |
+          mkdir -p data
+          curl -fsS "https://saturdayshakes.vercel.app/api/data" -o data/collection.json || echo '{}' > data/collection.json
+          node -e "JSON.parse(require('fs').readFileSync('data/collection.json','utf8'))"   # fail if not valid JSON
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/collection.json
+          git diff --staged --quiet || (git commit -m "chore: backup collection $(date -u +%FT%TZ)" && git push)
