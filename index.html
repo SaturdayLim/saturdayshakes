@@ -418,8 +418,20 @@ footer p{font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:va
 .type-toggle button{font-family:'Inter',sans-serif;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;background:transparent;border:none;color:var(--muted-foreground);padding:8px 16px;cursor:pointer;border-radius:calc(var(--radius) - 4px);transition:all .18s}
 .type-toggle button.active{background:var(--card);color:var(--primary-bright);box-shadow:var(--shadow-sm), inset 0 0 0 1px var(--border)}
 
-/* ===== v2: kitchen mode hides bar-only filters ===== */
-body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-toggle{display:none}
+/* ===== category chips + spirit filter only apply in The Bar ===== */
+body.view-specials #catChips,body.view-specials #spirit,
+body.view-inspirations #catChips,body.view-inspirations #spirit{display:none}
+/* "Made" badge — top-left, distinct from the variations badge (top-right) */
+.made-badge{
+  position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;
+  font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500;
+  color:var(--primary);background:var(--background);border:1px solid var(--input);
+  padding:3px 10px;border-radius:999px;z-index:2;
+}
+/* clickable cross-linked ingredient (links to its own recipe card) */
+.ing-link{color:var(--primary);text-decoration:none;border-bottom:1px solid var(--input);cursor:pointer;border-radius:3.75px}
+.ing-link:hover{border-bottom-color:var(--primary)}
+#sigToggle.is-sig{color:var(--primary);border-color:var(--primary)}
 
 /* ===== v2: cloud sync button ===== */
 #syncBtn{height:40px;letter-spacing:.1em;white-space:nowrap}
@@ -473,7 +485,8 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
   <div class="counts" id="counts"></div>
   <div class="view-tabs" id="viewTabs">
     <button data-view="bar" class="active">The Bar</button>
-    <button data-view="kitchen">The Kitchen</button>
+    <button data-view="specials">Saturday Specials</button>
+    <button data-view="inspirations">Inspirations</button>
   </div>
 </header>
 
@@ -485,12 +498,11 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
   </div>
   <div class="chips" id="catChips">
     <button class="chip active" data-cat="all">All</button>
-    <button class="chip" data-cat="1">Unforgettables</button>
+    <button class="chip" data-cat="1">Classics</button>
     <button class="chip" data-cat="2">Contemporary</button>
     <button class="chip" data-cat="3">New Era</button>
+    <button class="chip" data-cat="shakes">Saturday Shakes</button>
     <button class="chip" data-cat="made">Made</button>
-    <button class="chip" data-cat="insp">Inspirations</button>
-    <button class="chip" data-cat="classic">Classics</button>
     <button class="chip" data-cat="syrup">Syrups</button>
     <button class="chip" data-cat="mine">My Variations</button>
   </div>
@@ -6559,7 +6571,7 @@ const SEED_META = {
   ]
  }
 };
-const CATS = {1:"The Unforgettables", 2:"Contemporary Classics", 3:"New Era Drinks", 4:"Made", 5:"Syrups & Techniques", 6:"Inspirations", 7:"Classics"};
+const CATS = {1:"Classics", 2:"Contemporary Classics", 3:"New Era Drinks", 4:"Saturday Shakes", 5:"Syrups & Techniques", 6:"Inspirations", 7:"Saturday Shakes"};
 const LS_KEY = "compendium-variations";
 const LS_CUSTOM = "compendium-custom";
 const LS_META = "compendium-meta";
@@ -6605,7 +6617,8 @@ function collectAll(){
     cocktails: loadCustom().map(c=>Object.assign({}, c, {img:leanImg(c)})),
     kitchen: loadKitchen().map(c=>Object.assign({}, c, {img:leanImg(c)})),
     meta: (function(){ const m=loadMeta(), o={}; for(const k in m){ const e=m[k]||{}; o[k]=Object.assign({}, e, {img:(typeof e.img==="string"&&e.img.indexOf("data:")===0)?("images/"+k+".jpg"):(e.img||"")}); } return o; })(),
-    variations: loadVars()
+    variations: loadVars(),
+    sig: userSig()
   };
 }
 function hasContent(d){ return !!(d && ((d.cocktails&&d.cocktails.length)||(d.kitchen&&d.kitchen.length)||(d.meta&&Object.keys(d.meta||{}).length)||(d.variations&&Object.keys(d.variations||{}).length))); }
@@ -6615,6 +6628,7 @@ function applyAll(d){
   if(Array.isArray(d.kitchen)) localStorage.setItem(LS_KITCHEN, JSON.stringify(d.kitchen));
   if(d.meta&&typeof d.meta==="object") localStorage.setItem(LS_META, JSON.stringify(d.meta));
   if(d.variations&&typeof d.variations==="object") localStorage.setItem(LS_KEY, JSON.stringify(d.variations));
+  if(Array.isArray(d.sig)) localStorage.setItem("compendium-sig", JSON.stringify(d.sig));
 }
 async function cloudGet(){ try{ const r=await fetch("/api/data",{cache:"no-store"}); if(!r.ok) return undefined; return await r.json(); }catch(e){ return undefined; } }
 async function pushNow(){
@@ -6737,15 +6751,46 @@ function wireImageField(f){
 }
 function currentImg(f){ const el=f.querySelector("#imgVal"); return el?el.value:""; }
 
+/* ---------- IA helpers ---------- */
+function isMine(r){ return !!(r.custom && (r.c===4||r.c===7)); }       // my own cocktails = "Saturday Shakes"
+function isMade(r){ return tagsForRec(r).includes("made-it") || (r.custom && r.c===4); }
+function groupKey(r){ return (r.c===4||r.c===7) ? 47 : r.c; }          // fold custom Classics(7) into Saturday Shakes(4)
+/* signatures (Saturday Specials) — explicit id list, seeded once from Saturday-branded recipes */
+function userSig(){ try{ return JSON.parse(localStorage.getItem("compendium-sig")) || []; }catch(e){ return []; } }
+function isSig(r){ return userSig().includes(r.id); }
+function toggleSig(id){ const s=new Set(userSig()); s.has(id)?s.delete(id):s.add(id); localStorage.setItem("compendium-sig", JSON.stringify([...s])); scheduleSync(); }
+function initSig(){
+  if(localStorage.getItem("compendium-sig")!=null) return;
+  const ids = allRecipes().filter(r=>r.custom && r.c!==5 && r.c!==6 && /saturday/i.test(r.n)).map(r=>r.id);
+  localStorage.setItem("compendium-sig", JSON.stringify(ids));
+}
+function inView(r){
+  if(state.view==="inspirations") return !!(r.custom && r.c===6);
+  if(state.view==="specials") return isSig(r);
+  return !(r.custom && r.c===6); // The Bar: everything except the Inspirations library
+}
+/* cross-link: find a recipe whose name matches an ingredient (syrups, prep, or cocktails) */
+function normName(s){ return String(s||"").toLowerCase().replace(/\s*\(.*?\)/g,"").replace(/[^a-z0-9 ]/g,"").trim(); }
+function recipeByIngredient(name){
+  const key=normName(name); if(key.length<4) return null;
+  const recs=allRecipes().filter(x=>x.id!==openId);
+  let hit=recs.find(x=>normName(x.n)===key); if(hit) return hit;   // exact
+  // full recipe name appears as a contiguous word-run inside the ingredient
+  const cand=recs.filter(x=>{ const n=normName(x.n); return n.length>=6 && (" "+key+" ").indexOf(" "+n+" ")>=0; });
+  cand.sort((a,b)=>normName(b.n).length-normName(a.n).length);
+  return cand[0]||null;
+}
+
 /* ---------- filtering ---------- */
 function matches(r){
+  if(!inView(r)) return false;
   if(state.tag && !tagsForRec(r).includes(state.tag)) return false;
-  if(state.cat==="mine"){ if(varsFor(r.id).length===0) return false; }
-  else if(state.cat==="made"){ if(!r.custom || r.c!==4) return false; }
-  else if(state.cat==="insp"){ if(!r.custom || r.c!==6) return false; }
-  else if(state.cat==="classic"){ if(!r.custom || r.c!==7) return false; }
-  else if(state.cat==="syrup"){ if(!r.custom || r.c!==5) return false; }
-  else if(state.cat!=="all" && r.c!==+state.cat) return false;
+  const c=state.cat;
+  if(c==="mine"){ if(varsFor(r.id).length===0) return false; }
+  else if(c==="shakes"){ if(!isMine(r)) return false; }
+  else if(c==="made"){ if(!isMade(r)) return false; }
+  else if(c==="syrup"){ if(!(r.custom && r.c===5)) return false; }
+  else if(c!=="all" && r.c!==+c) return false;
   if(state.spirit!=="all" && r.s!==state.spirit) return false;
   if(state.q){
     const hay = (r.n+" "+r.i.map(x=>x[1]).join(" ")+" "+tagsForRec(r).join(" ")).toLowerCase();
@@ -6763,6 +6808,7 @@ function cardHTML(r){
   return '<article class="card'+(img?' has-img':'')+'" data-id="'+esc(r.id)+'" tabindex="0" role="button" aria-label="'+esc(r.n)+'">'
     + (img ? '<div class="card-img"><img loading="lazy" src="'+esc(img)+'" alt="" onerror="this.parentNode.style.display=&#39;none&#39;"></div>' : '')
     + (nv ? '<span class="var-badge">'+nv+' variation'+(nv>1?'s':'')+'</span>' : '')
+    + (isMade(r) ? '<span class="made-badge">Made</span>' : '')
     + '<div class="card-body">'
     +   '<div class="cat">'+CATS[r.c]+'</div>'
     +   '<h3>'+esc(r.n)+'</h3>'
@@ -6772,7 +6818,6 @@ function cardHTML(r){
     + '</div></article>';
 }
 function render(){
-  if(state.view==="kitchen"){ renderKitchen(); return; }
   const grid = document.getElementById("grid");
   const list = allRecipes().filter(matches);
   const allVars = loadVars();
@@ -6781,20 +6826,28 @@ function render(){
   const cp=["102 official"]; if(n4)cp.push(n4+" made"); if(n6)cp.push(n6+" to-try"); if(n7)cp.push(n7+" classics"); if(n5)cp.push(n5+" syrups"); if(totalVars)cp.push(totalVars+" variation"+(totalVars===1?"":"s"));
   document.getElementById("counts").textContent = cp.join(" · ");
   if(list.length===0){
-    if(["made","insp","classic","syrup"].includes(state.cat)){
-      const cmap={made:4,insp:6,classic:7,syrup:5};
+    if(state.view==="specials"){
+      grid.innerHTML = '<div class="empty">No Saturday Specials yet &mdash; open any cocktail and tap &#9733; Make Signature to feature it here.</div>';
+    } else if(state.view==="inspirations"){
+      grid.innerHTML = '<div class="empty">No inspirations yet.<br><button class="gold-btn" id="emptyAdd" style="margin-top:20px">+ Add one</button></div>';
+      document.getElementById("emptyAdd").onclick = ()=>openCocktailForm(null, {c:6});
+    } else if(["made","shakes","syrup"].includes(state.cat)){
       grid.innerHTML = '<div class="empty">Nothing here yet &mdash; the back bar awaits.<br><button class="gold-btn" id="emptyAdd" style="margin-top:20px">+ Add one</button></div>';
-      document.getElementById("emptyAdd").onclick = ()=>openCocktailForm(null, {c:cmap[state.cat]});
+      document.getElementById("emptyAdd").onclick = ()=>openCocktailForm(null, {c:state.cat==="syrup"?5:4});
     } else grid.innerHTML = '<div class="empty">Nothing on the menu matches &mdash; adjust your search'+(state.tag?' or clear the tag':'')+'.</div>';
     return;
   }
-  let html = "", lastCat = null;
-  const grouped = state.cat==="all" || state.cat==="mine";
+  let html = "", lastKey = null;
+  const grouped = state.view==="bar" && (state.cat==="all" || state.cat==="mine" || state.cat==="shakes");
+  if(grouped) list.sort((a,b)=>groupKey(a)-groupKey(b));
   for(const r of list){
-    if(grouped && r.c!==lastCat){
-      lastCat = r.c;
-      const cnt = list.filter(x=>x.c===r.c).length;
-      html += '<div class="section-label">'+CATS[r.c]+' <span class="cnt">'+cnt+'</span></div>';
+    if(grouped){
+      const k = groupKey(r);
+      if(k!==lastKey){
+        lastKey = k;
+        const cnt = list.filter(x=>groupKey(x)===k).length;
+        html += '<div class="section-label">'+CATS[r.c]+' <span class="cnt">'+cnt+'</span></div>';
+      }
     }
     html += cardHTML(r);
   }
@@ -6860,6 +6913,7 @@ function openModal(id){
     + '<div class="m-owner-actions">'
     +   (r.custom ? '<button class="ghost-btn" id="editCocktail">Edit Recipe</button>' : '<button class="ghost-btn" id="metaEdit">Add Photo / Tags</button>')
     +   '<button class="ghost-btn" id="dupCocktail">Duplicate &amp; Customize</button>'
+    +   '<button class="ghost-btn'+(isSig(r)?' is-sig':'')+'" id="sigToggle">'+(isSig(r)?'&#9733; Signature':'&#9734; Make Signature')+'</button>'
     +   (r.custom ? '<button class="v-btn danger" id="delCocktail">Delete</button>' : '')
     + '</div>'
     + (tg.length?'<div class="m-tags">'+tg.map(t=>'<span class="tag" data-tag="'+esc(t)+'">'+esc(t)+'</span>').join("")+'</div>':'')
@@ -6867,7 +6921,7 @@ function openModal(id){
     +   (r.m?'<div class="m-spec"><div class="k">Method</div><div class="v">'+esc(r.m)+'</div></div>':'')
     +   (r.g?'<div class="m-spec"><div class="k">Glass</div><div class="v">'+esc(r.g)+'</div></div>':'')
     + '</div>'
-    + (ings.length?'<div class="m-h">Ingredients</div><table class="ing-table">'+ ings.map(x=>'<tr><td class="q">'+esc(qty(x[0]))+'</td><td class="n">'+esc(x[1])+'</td></tr>').join("") +'</table>':'')
+    + (ings.length?'<div class="m-h">Ingredients</div><table class="ing-table">'+ ings.map(x=>{ const lk=recipeByIngredient(x[1]); const cell = lk?'<a class="ing-link" data-go="'+esc(lk.id)+'">'+esc(x[1])+'</a>':esc(x[1]); return '<tr><td class="q">'+esc(qty(x[0]))+'</td><td class="n">'+cell+'</td></tr>'; }).join("") +'</table>':'')
     + (r.st?'<div class="m-h">Method</div><div class="m-method">'+esc(r.st)+'</div>':'')
     + (r.ga?'<div class="m-h">Garnish</div><div class="m-garnish">'+esc(r.ga)+'</div>':'')
     + '<div class="m-h">House Variations</div>'
@@ -6886,6 +6940,8 @@ function openModal(id){
 
   m.querySelector(".close").onclick = closeModal;
   m.querySelector("#dupCocktail").onclick = ()=>duplicateRecipe(id);
+  m.querySelector("#sigToggle").onclick = ()=>{ toggleSig(id); openModal(id); if(state.view==="specials") render(); toast(isSig(r)?"Added to Saturday Specials":"Removed from Saturday Specials"); };
+  m.querySelectorAll(".ing-link").forEach(a=>a.onclick=()=>openModal(a.dataset.go));
   if(r.custom){
     m.querySelector("#editCocktail").onclick = ()=>{ closeModal(); openCocktailForm(id); };
     m.querySelector("#delCocktail").onclick = ()=>{
@@ -7112,11 +7168,15 @@ function closeKitchenForm(){ document.getElementById("kFormOverlay").classList.r
 /* ---------- view + tag ---------- */
 function anyOverlayOpen(){ return ["overlay","formOverlay","kOverlay","kFormOverlay","cmdk"].some(idn=>document.getElementById(idn).classList.contains("open")); }
 function setView(v){
-  state.view=v; state.tag=""; state.q=""; const qb=document.getElementById("q"); if(qb) qb.value="";
+  state.view=v; state.tag=""; state.q=""; state.cat="all";
+  const qb=document.getElementById("q"); if(qb) qb.value="";
   document.querySelectorAll("#viewTabs button").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
-  document.body.classList.toggle("kitchen-mode", v==="kitchen");
-  document.getElementById("addCocktailBtn").style.display = v==="bar"?"":"none";
-  document.getElementById("addFoodBtn").style.display = v==="kitchen"?"":"none";
+  document.querySelectorAll("#catChips .chip").forEach(x=>x.classList.toggle("active", x.dataset.cat==="all"));
+  document.body.classList.remove("view-specials","view-inspirations");
+  if(v==="specials") document.body.classList.add("view-specials");
+  else if(v==="inspirations") document.body.classList.add("view-inspirations");
+  document.getElementById("addCocktailBtn").style.display = (v==="bar"||v==="inspirations")?"":"none";
+  document.getElementById("addFoodBtn").style.display = "none";
   updateTagPill(); render();
 }
 function setTag(t){ state.tag = (state.tag===t?"":t); updateTagPill(); render(); }
@@ -7139,7 +7199,7 @@ document.getElementById("overlay").addEventListener("click", e=>{ if(e.target.id
 document.getElementById("formOverlay").addEventListener("click", e=>{ if(e.target.id==="formOverlay") closeCocktailForm(); });
 document.getElementById("kOverlay").addEventListener("click", e=>{ if(e.target.id==="kOverlay") closeKitchenModal(); });
 document.getElementById("kFormOverlay").addEventListener("click", e=>{ if(e.target.id==="kFormOverlay") closeKitchenForm(); });
-document.getElementById("addCocktailBtn").onclick = ()=>openCocktailForm();
+document.getElementById("addCocktailBtn").onclick = ()=>openCocktailForm(null, state.view==="inspirations"?{c:6}:null);
 document.getElementById("addFoodBtn").onclick = ()=>openKitchenForm();
 document.getElementById("viewTabs").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b) setView(b.dataset.view); });
 document.addEventListener("keydown", e=>{
@@ -7218,6 +7278,7 @@ document.getElementById("importFile").addEventListener("change", e=>{
 });
 
 seedOnce();
+initSig();
 updateTagPill();
 render();
 initSync();
