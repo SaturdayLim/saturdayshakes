@@ -198,7 +198,7 @@ select.chip option{background:var(--ink2);color:var(--cream)}
 .overlay.open{display:flex;animation:fade .18s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .modal{
-  background:linear-gradient(170deg,#221d14,#171309 65%);
+  background:var(--popover);
   border:1px solid var(--line);max-width:680px;width:100%;position:relative;
   padding:clamp(28px,5vw,52px);box-shadow:var(--shadow-lg);border-radius:calc(var(--radius) + 6px);
   animation:zoomin .18s cubic-bezier(.16,1,.3,1);
@@ -401,7 +401,9 @@ footer p{font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:va
 .m-img{margin:-1px -1px 22px;border-radius:calc(var(--radius) + 6px) calc(var(--radius) + 6px) 0 0;overflow:hidden;max-height:320px}
 .m-img img{width:100%;max-height:320px;object-fit:cover;display:block}
 .modal{overflow:hidden;padding-top:0}
-.modal .close{background:rgba(8,6,4,.5)}
+.modal .close{background:var(--muted);color:var(--foreground)}
+[data-theme="dark"] .modal{background:linear-gradient(170deg,#221d14,#171309 65%)}
+[data-theme="dark"] .modal .close{background:rgba(8,6,4,.5)}
 
 /* ===== v2: image field in forms ===== */
 .img-field{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
@@ -445,6 +447,15 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
 .ghost-btn,.v-btn{border-radius:50px}
 /* active toggles: red text on white */
 .chip.active,.unit-toggle button.active,.view-tabs button.active,.type-toggle button.active{color:var(--primary);background:var(--elevated);box-shadow:inset 0 0 0 1px var(--input)}
+/* night-mode toggle pill — icon only, flicks sun/moon */
+.theme-pill{
+  width:46px;height:32px;border-radius:50px;border:1px solid var(--input);
+  background:var(--control-bg);color:var(--primary);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:1rem;line-height:1;padding:0;outline:none;transition:all .18s;
+}
+.theme-pill:hover{border-color:var(--primary)}
+.theme-pill:focus-visible{box-shadow:0 0 0 3px var(--ring)}
 /* scrollbar */
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -501,7 +512,7 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
   <button class="gold-btn add-cocktail" id="addCocktailBtn">Add Cocktail</button>
   <button class="gold-btn add-cocktail" id="addFoodBtn" style="display:none">Add Recipe</button>
   <button class="ghost-btn" id="syncBtn" style="display:none">&#9729;&#65039; Sync</button>
-  <button class="ghost-btn" id="themeBtn" type="button" title="Toggle night mode" aria-label="Toggle night mode">&#9789; Night</button>
+  <button class="theme-pill" id="themeBtn" type="button" title="Toggle night mode" aria-label="Toggle night mode"></button>
   <div class="tag-pill" id="tagPill" style="display:none"></div>
 </div>
 
@@ -7233,7 +7244,7 @@ initSync();
   if(!btn) return;
   function paint(){
     const dark=document.documentElement.getAttribute("data-theme")==="dark";
-    btn.innerHTML=dark?"☀️ Day":"☽ Night";
+    btn.textContent=dark?"🌙":"☀️";
   }
   paint();
   btn.onclick=function(){
