@@ -1,0 +1,9 @@
+{
+  "name": "saturdayshakes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Cocktail Compendium — static app + cross-device sync function.",
+  "dependencies": {
+    "redis": "^4.7.0"
+  }
+}
