@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script>(function(){try{if(localStorage.getItem('compendium-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
 <style>
 :root{
   /* Redbrick Coffee — scarlet editorial on butcher paper */
@@ -16,7 +17,7 @@
   --card-2:#ececec;
   --popover:#ffffff;
   --muted:#f2f2f2;
-  --muted-foreground:#7a7a7a;
+  --muted-foreground:#565656;
   --primary:#e82c2a;
   --primary-bright:#e82c2a;
   --primary-dim:#b81f1d;
@@ -28,6 +29,11 @@
   --shadow-sm:none;
   --shadow-md:none;
   --shadow-lg:none;
+  /* themeable surfaces (flip in dark mode) */
+  --control-bg:#ffffff;
+  --toolbar-bg:rgba(255,255,255,.92);
+  --elevated:#ffffff;
+  --text-2:#454545;
   /* legacy aliases */
   --ink:var(--background);
   --ink2:#f7f7f7;
@@ -41,6 +47,28 @@
   --line:rgba(232,44,42,.30);
   --line-soft:var(--border);
   --shadow:var(--shadow-md);
+}
+/* ===== Night mode — warm carbon with brightened brick red ===== */
+[data-theme="dark"]{
+  --background:#15140f;
+  --foreground:#f1ece2;
+  --card:#211f1a;
+  --card-2:#2a2722;
+  --popover:#1c1a15;
+  --muted:#24221c;
+  --muted-foreground:#bdb6a8;
+  --primary:#ff5c4f;
+  --primary-bright:#ff7a6f;
+  --primary-dim:#c8443b;
+  --primary-foreground:#1a0c0a;
+  --border:rgba(255,255,255,.13);
+  --input:rgba(255,92,79,.50);
+  --ring:rgba(255,92,79,.32);
+  --control-bg:#1b1915;
+  --toolbar-bg:rgba(20,18,14,.92);
+  --elevated:#2c2922;
+  --text-2:#d6cfc1;
+  --ink2:#1b1915;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -76,7 +104,7 @@ h1{
 /* ---------- Toolbar ---------- */
 .toolbar{
   position:sticky;top:0;z-index:50;
-  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
+  background:var(--toolbar-bg);backdrop-filter:blur(12px);
   border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
   padding:16px clamp(16px,4vw,48px);
   display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
@@ -85,7 +113,7 @@ h1{
   flex:1 1 260px;max-width:420px;position:relative;
 }
 .search input{
-  width:100%;height:40px;background:#ffffff;border:1px solid var(--input);color:var(--foreground);
+  width:100%;height:40px;background:var(--control-bg);border:1px solid var(--input);color:var(--foreground);
   font-family:'Inter',sans-serif;font-weight:300;font-size:.92rem;letter-spacing:.05em;
   padding:0 64px 0 42px;border-radius:calc(var(--radius) - 2px);outline:none;
   transition:border-color .18s, box-shadow .18s;
@@ -111,7 +139,7 @@ h1{
 .chip.active{background:var(--card);color:var(--primary-bright);box-shadow:var(--shadow-sm), inset 0 0 0 1px var(--border)}
 select.chip{appearance:none;-webkit-appearance:none;padding-right:30px;height:40px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%23e82c2a' fill='none'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 12px center;background-color:#ffffff;
+  background-repeat:no-repeat;background-position:right 12px center;background-color:var(--control-bg);
   border:1px solid var(--input);border-radius:calc(var(--radius) - 2px);color:var(--foreground);
   transition:border-color .18s, box-shadow .18s;
 }
@@ -149,11 +177,11 @@ select.chip option{background:var(--ink2);color:var(--cream)}
 .card:focus-visible{box-shadow:0 0 0 3px var(--ring), var(--shadow-sm)}
 .card .cat{font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-dim)}
 .card h3{font-family:'Inter',sans-serif;font-weight:600;font-size:1.55rem;color:var(--cream);letter-spacing:.03em;line-height:1.15}
-.card .meta{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cream-dim);display:flex;gap:14px;flex-wrap:wrap}
-.card .meta b{color:var(--gold);font-weight:400}
+.card .meta{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);display:flex;gap:14px;flex-wrap:wrap}
+.card .meta b{color:var(--gold);font-weight:500}
 .card .ing-preview{
-  font-family:'Inter',sans-serif;font-style:italic;font-size:1rem;color:var(--cream-dim);
-  line-height:1.45;border-top:1px solid var(--line-soft);padding-top:12px;margin-top:4px;
+  font-family:'Inter',sans-serif;font-style:normal;font-size:.96rem;color:var(--text-2);
+  line-height:1.5;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;
 }
 .var-badge{
   position:absolute;top:16px;right:16px;display:inline-flex;align-items:center;
@@ -223,7 +251,7 @@ select.chip option{background:var(--ink2);color:var(--cream)}
 .v-btn:focus-visible{box-shadow:0 0 0 3px var(--ring)}
 .add-var{margin-top:6px}
 .add-var input,.add-var textarea{
-  width:100%;background:#ffffff;border:1px solid var(--input);color:var(--foreground);
+  width:100%;background:var(--control-bg);border:1px solid var(--input);color:var(--foreground);
   font-family:'Inter',sans-serif;font-size:1.05rem;padding:10px 14px;margin-bottom:10px;
   border-radius:calc(var(--radius) - 2px);outline:none;resize:vertical;
   transition:border-color .18s, box-shadow .18s;
@@ -316,7 +344,7 @@ footer p{font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:va
 #formOverlay{z-index:160}
 .cform label{display:block;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:18px 0 8px}
 .cform input,.cform select,.cform textarea{
-  width:100%;background:#ffffff;border:1px solid var(--input);color:var(--foreground);
+  width:100%;background:var(--control-bg);border:1px solid var(--input);color:var(--foreground);
   font-family:'Inter',sans-serif;font-size:1.08rem;padding:10px 14px;border-radius:calc(var(--radius) - 2px);
   outline:none;resize:vertical;transition:border-color .18s,box-shadow .18s;
 }
@@ -377,7 +405,7 @@ footer p{font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:va
 
 /* ===== v2: image field in forms ===== */
 .img-field{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
-.img-preview{flex:0 0 120px;width:120px;height:120px;border:1px solid var(--input);border-radius:calc(var(--radius) - 2px);overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f2f2f2}
+.img-preview{flex:0 0 120px;width:120px;height:120px;border:1px solid var(--input);border-radius:calc(var(--radius) - 2px);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--card)}
 .img-preview img{width:100%;height:100%;object-fit:cover}
 .img-preview span{font-family:'Inter',sans-serif;font-style:italic;color:var(--muted-foreground);font-size:.95rem}
 .img-controls{flex:1 1 200px;display:flex;flex-direction:column;gap:10px}
@@ -416,7 +444,7 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
 .gold-btn:hover{background:var(--primary);color:#fff}
 .ghost-btn,.v-btn{border-radius:50px}
 /* active toggles: red text on white */
-.chip.active,.unit-toggle button.active,.view-tabs button.active,.type-toggle button.active{color:var(--primary);background:#fff;box-shadow:inset 0 0 0 1px var(--input)}
+.chip.active,.unit-toggle button.active,.view-tabs button.active,.type-toggle button.active{color:var(--primary);background:var(--elevated);box-shadow:inset 0 0 0 1px var(--input)}
 /* scrollbar */
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -440,7 +468,7 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
 
 <div class="toolbar">
   <div class="search">
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#c8a45d"/><path d="M10.5 10.5L14 14" stroke="#c8a45d"/></svg>
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor"/><path d="M10.5 10.5L14 14" stroke="currentColor"/></svg>
     <input id="q" type="text" placeholder="Search by name or ingredient&hellip;" autocomplete="off">
     <span class="kbd">Ctrl K</span>
   </div>
@@ -473,6 +501,7 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
   <button class="gold-btn add-cocktail" id="addCocktailBtn">Add Cocktail</button>
   <button class="gold-btn add-cocktail" id="addFoodBtn" style="display:none">Add Recipe</button>
   <button class="ghost-btn" id="syncBtn" style="display:none">&#9729;&#65039; Sync</button>
+  <button class="ghost-btn" id="themeBtn" type="button" title="Toggle night mode" aria-label="Toggle night mode">&#9789; Night</button>
   <div class="tag-pill" id="tagPill" style="display:none"></div>
 </div>
 
@@ -506,7 +535,7 @@ body.kitchen-mode #catChips,body.kitchen-mode #spirit,body.kitchen-mode .unit-to
 <div class="cmdk" id="cmdk" role="dialog" aria-label="Quick open">
   <div class="cmdk-panel">
     <div class="cmdk-head">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#c8a45d"/><path d="M10.5 10.5L14 14" stroke="#c8a45d"/></svg>
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor"/><path d="M10.5 10.5L14 14" stroke="currentColor"/></svg>
       <input id="cmdkInput" type="text" placeholder="Type a cocktail or an ingredient&hellip;" autocomplete="off">
     </div>
     <div class="cmdk-list" id="cmdkList"></div>
@@ -7197,6 +7226,24 @@ seedOnce();
 updateTagPill();
 render();
 initSync();
+
+/* ---------- night-mode toggle ---------- */
+(function(){
+  const btn=document.getElementById("themeBtn");
+  if(!btn) return;
+  function paint(){
+    const dark=document.documentElement.getAttribute("data-theme")==="dark";
+    btn.innerHTML=dark?"☀️ Day":"☽ Night";
+  }
+  paint();
+  btn.onclick=function(){
+    const dark=document.documentElement.getAttribute("data-theme")==="dark";
+    if(dark){ document.documentElement.removeAttribute("data-theme"); }
+    else { document.documentElement.setAttribute("data-theme","dark"); }
+    try{ localStorage.setItem("compendium-theme", dark?"light":"dark"); }catch(e){}
+    paint();
+  };
+})();
 
 </script>
 </body>
