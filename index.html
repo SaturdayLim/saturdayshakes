@@ -428,6 +428,19 @@ body.view-inspirations #catChips,body.view-inspirations #spirit{display:none}
   color:var(--primary);background:var(--background);border:1px solid var(--input);
   padding:3px 10px;border-radius:999px;z-index:2;
 }
+/* star toggle on each card — add/remove from Saturday Specials */
+.card-star{
+  position:absolute;top:12px;right:12px;z-index:3;width:34px;height:34px;padding:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:1.05rem;line-height:1;border-radius:50px;transition:transform .15s,background .15s,color .15s,border-color .15s;
+  background:var(--background);border:1px solid var(--input);color:var(--primary);
+}
+.card-star:hover{border-color:var(--primary);transform:scale(1.1)}
+.card-star.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.card-star:focus-visible{box-shadow:0 0 0 3px var(--ring);outline:none}
+/* keep the variations badge clear of the star */
+.card .var-badge{right:54px}
+.card.has-img .var-badge{top:12px;right:52px}
 /* clickable cross-linked ingredient (links to its own recipe card) */
 .ing-link{color:var(--primary);text-decoration:none;border-bottom:1px solid var(--input);cursor:pointer;border-radius:3.75px}
 .ing-link:hover{border-bottom-color:var(--primary)}
@@ -6809,6 +6822,7 @@ function cardHTML(r){
     + (img ? '<div class="card-img"><img loading="lazy" src="'+esc(img)+'" alt="" onerror="this.parentNode.style.display=&#39;none&#39;"></div>' : '')
     + (nv ? '<span class="var-badge">'+nv+' variation'+(nv>1?'s':'')+'</span>' : '')
     + (isMade(r) ? '<span class="made-badge">Made</span>' : '')
+    + '<button class="card-star'+(isSig(r)?' on':'')+'" data-star="'+esc(r.id)+'" title="'+(isSig(r)?'Remove from Saturday Specials':'Add to Saturday Specials')+'" aria-label="Toggle Saturday Special" aria-pressed="'+(isSig(r)?'true':'false')+'">'+(isSig(r)?'★':'☆')+'</button>'
     + '<div class="card-body">'
     +   '<div class="cat">'+CATS[r.c]+'</div>'
     +   '<h3>'+esc(r.n)+'</h3>'
@@ -7188,6 +7202,7 @@ function updateTagPill(){
 
 /* ---------- events ---------- */
 document.getElementById("grid").addEventListener("click", e=>{
+  const star=e.target.closest(".card-star"); if(star){ e.stopPropagation(); const wasSig=isSig({id:star.dataset.star}); toggleSig(star.dataset.star); render(); toast(wasSig?"Removed from Saturday Specials":"Added to Saturday Specials"); return; }
   const tag=e.target.closest(".tag"); if(tag){ e.stopPropagation(); setTag(tag.dataset.tag); return; }
   const c=e.target.closest(".card"); if(!c) return;
   if(state.view==="kitchen") openKitchenModal(c.dataset.id); else openModal(c.dataset.id);
